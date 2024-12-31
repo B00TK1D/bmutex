@@ -15,30 +15,43 @@ A Better Mutex for Golang
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/B00TK1D/bmutex"
+	"github.com/B00TK1D/bmutex"
 )
 
 func main() {
-	m := Bmutex{}
+	m := bmutex.BMutex{}
 
-    m.Protect(func() {
-        fmt.Println("Protected operation")
-    })
+	m.Protect(func() {
+		fmt.Println("Protected operation")
+	})
 
-	for i := 0; i < 20; i++ {
+	m.Lock()
+	fmt.Println("Locked")
+	m.Unlock()
+	fmt.Println("Unlocked")
+
+	for i := 0; i < 5; i++ {
 		m.Queue(func() {
-			fmt.Println("Parallel 1 queued operation", i)
+			fmt.Println("Parallel 1 Queue operation", i)
 		})
 	}
-    for i := 0; i < 20; i++ {
+	for i := 0; i < 5; i++ {
 		m.Queue(func() {
-			fmt.Println("Parallel 1 queued operation", i)
+			fmt.Println("Parallel 2 Queue operation", i)
 		})
 	}
 	m.Wait()
-	fmt.Println("Expected", iterations, "got", a)
+
+	m.QueueMany(func(i int) {
+		fmt.Println("Parallel 1 QueuedMany operation", i)
+	}, 5)
+	m.QueueMany(func(i int) {
+		fmt.Println("Parallel 2 QueuedMany operation", i)
+	}, 5)
+	fmt.Println("Waiting")
+	m.Wait()
 }
 ```
 
@@ -51,31 +64,16 @@ However, it performs up to 4.75x faster than basic standard library alternatives
 
 ```
 # go test -bench=. -benchmem -cover
-goos: darwin
-goarch: arm64
-pkg: github.com/B00TK1D/bmutex
-cpu: Apple M1 Max
-BenchmarkLock
-BenchmarkLock-10                        70716147                16.99 ns/op            0 B/op          0 allocs/op
-BenchmarkLockBlocked
-BenchmarkLockBlocked-10                 10203492               127.7 ns/op             0 B/op          0 allocs/op
-BenchmarkTryLockSucceed
-BenchmarkTryLockSucceed-10              35324506                32.30 ns/op            0 B/op          0 allocs/op
-BenchmarkTryLockFail
-BenchmarkTryLockFail-10                 74538021                16.13 ns/op            0 B/op          0 allocs/op
-BenchmarkProtect
-BenchmarkProtect-10                     67977595                17.79 ns/op            0 B/op          0 allocs/op
-BenchmarkQueue
-BenchmarkQueue-10                        5386003               232.3 ns/op            16 B/op          1 allocs/op
-BenchmarkQueueMany
-BenchmarkQueueMany-10                    7566622               185.5 ns/op            40 B/op          2 allocs/op
-BenchmarkCompareLock
-BenchmarkCompareLock-10                 74170032                16.12 ns/op            0 B/op          0 allocs/op
-BenchmarkCompareLockBlocked
-BenchmarkCompareLockBlocked-10          13502494                87.42 ns/op            0 B/op          0 allocs/op
-BenchmarkCompareQueue
-BenchmarkCompareQueue-10                 1652316               733.7 ns/op            42 B/op          1 allocs/op
+BenchmarkLock                      70716147        16.99 ns/op    0 B/op  0 allocs/op
+BenchmarkLockBlocked               10203492        127.7 ns/op    0 B/op  0 allocs/op
+BenchmarkTryLockSucceed            35324506        32.30 ns/op    0 B/op  0 allocs/op
+BenchmarkTryLockFail               74538021        16.13 ns/op    0 B/op  0 allocs/op
+BenchmarkProtect                   67977595        17.79 ns/op    0 B/op  0 allocs/op
+BenchmarkQueue                      5386003        232.3 ns/op   16 B/op  1 allocs/op
+BenchmarkQueueMany                  7566622        185.5 ns/op   40 B/op  2 allocs/op
+BenchmarkCompareLock               74170032        16.12 ns/op    0 B/op  0 allocs/op
+BenchmarkCompareLockBlocked        13502494        87.42 ns/op    0 B/op  0 allocs/op
+BenchmarkCompareQueue               1652316        733.7 ns/op   42 B/op  1 allocs/op
 PASS
 coverage: 100.0% of statements
-ok      github.com/B00TK1D/bmutex       18.740s
 ```
