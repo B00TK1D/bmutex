@@ -6,7 +6,7 @@ import (
 
 var MAXQUEUE = 100000
 
-type Bmutex struct {
+type BMutex struct {
 	sync.Mutex
 	op      sync.Mutex
 	ch      chan func()
@@ -15,14 +15,17 @@ type Bmutex struct {
 	waiting int
 }
 
-func (m *Bmutex) Lock() {
+func (m *BMutex) Lock() {
 	m.waiting++
 	m.Mutex.Lock()
 	m.waiting--
 	m.locked = true
 }
 
-func (m *Bmutex) Unlock() bool {
+func (m *BMutex) Unlock() bool {
+	if len(m.ch) > 0 {
+		return false
+	}
 	m.op.Lock()
 	l := m.Mutex.TryLock()
 	m.Mutex.Unlock()
@@ -31,7 +34,7 @@ func (m *Bmutex) Unlock() bool {
 	return !l
 }
 
-func (m *Bmutex) TryLock() bool {
+func (m *BMutex) TryLock() bool {
 	m.op.Lock()
 	m.locked = true
 	l := m.Mutex.TryLock()
@@ -39,14 +42,14 @@ func (m *Bmutex) TryLock() bool {
 	return l
 }
 
-func (m *Bmutex) IsLocked() bool {
+func (m *BMutex) IsLocked() bool {
 	m.op.Lock()
 	l := m.locked
 	m.op.Unlock()
 	return l
 }
 
-func (m *Bmutex) Protect(f func()) {
+func (m *BMutex) Protect(f func()) {
 	m.waiting++
 	m.Mutex.Lock()
 	m.waiting--
@@ -58,21 +61,23 @@ func (m *Bmutex) Protect(f func()) {
 	m.op.Unlock()
 }
 
-func (m *Bmutex) startWorker() {
+func (m *BMutex) startWorker() {
 	go func() {
 		var t func()
 		for {
 			select {
 			case t = <-m.ch:
 				m.Mutex.Lock()
+				m.locked = true
 				t()
 				m.Mutex.Unlock()
+				m.locked = false
 			}
 		}
 	}()
 }
 
-func (m *Bmutex) Queue(f func()) {
+func (m *BMutex) Queue(f func()) {
 	m.op.Lock()
 	defer m.op.Unlock()
 	if m.ch == nil {
@@ -88,7 +93,7 @@ func (m *Bmutex) Queue(f func()) {
 	}
 }
 
-func (m *Bmutex) QueueMany(f func(int), n int) {
+func (m *BMutex) QueueMany(f func(int), n int) {
 	m.op.Lock()
 	defer m.op.Unlock()
 	if m.ch == nil {
@@ -114,11 +119,11 @@ func (m *Bmutex) QueueMany(f func(int), n int) {
 	}
 }
 
-func (m *Bmutex) Waiting() int {
+func (m *BMutex) Waiting() int {
 	return len(m.ch) + m.waiting
 }
 
-func (m *Bmutex) Wait() {
+func (m *BMutex) Wait() {
 	done := make(chan struct{})
 	m.Queue(func() {
 		close(done)

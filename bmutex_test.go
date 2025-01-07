@@ -6,7 +6,7 @@ import (
 )
 
 func TestLock(t *testing.T) {
-	m := Bmutex{}
+	m := BMutex{}
 	m.Lock()
 	if !m.locked {
 		t.Error("Expected true, got", m.locked)
@@ -31,7 +31,7 @@ func TestLock(t *testing.T) {
 }
 
 func TestTry(t *testing.T) {
-	m := Bmutex{}
+	m := BMutex{}
 	v := m.TryLock()
 	if !v {
 		t.Error("Expected true, got", v)
@@ -53,7 +53,7 @@ func TestTry(t *testing.T) {
 func TestProtect(t *testing.T) {
 	const iterations = 100
 	a := 0
-	m := &Bmutex{}
+	m := &BMutex{}
 	go func() {
 		for i := 0; i < iterations; i++ {
 			m.Protect(func() {
@@ -78,7 +78,7 @@ func TestProtect(t *testing.T) {
 func TestQueue(t *testing.T) {
 	const iterations = 10000
 	ch := make(chan int, iterations)
-	m := Bmutex{}
+	m := BMutex{}
 	for i := 0; i < iterations; i++ {
 		m.Queue(func() {
 			ch <- i
@@ -95,7 +95,7 @@ func TestQueue(t *testing.T) {
 
 func TestQueueLarge(t *testing.T) {
 	const iterations = 1000000
-	m := Bmutex{}
+	m := BMutex{}
 	ch := make(chan int, iterations)
 	for i := 0; i < iterations; i++ {
 		m.Queue(func() {
@@ -115,7 +115,7 @@ func TestQueueMany(t *testing.T) {
 	for j := 0; j < 10; j++ {
 		const iterations = 10000
 		ch := make(chan int, iterations)
-		m := Bmutex{}
+		m := BMutex{}
 		m.QueueMany(func(i int) {
 			ch <- i
 		}, iterations)
@@ -132,7 +132,7 @@ func TestQueueMany(t *testing.T) {
 func TestQueueManyLarge(t *testing.T) {
 	for j := 0; j < 10; j++ {
 		const iterations = 1000000
-		m := Bmutex{}
+		m := BMutex{}
 		ch := make(chan int, iterations)
 		m.QueueMany(func(i int) {}, 0)
 		go m.QueueMany(func(i int) {
@@ -151,7 +151,7 @@ func TestQueueManyLarge(t *testing.T) {
 func TestQueueLargerThanMax(t *testing.T) {
 	for j := 0; j < 10; j++ {
 		const iterations = 1000000
-		m := Bmutex{}
+		m := BMutex{}
 		ch := make(chan int)
 		go m.QueueMany(func(i int) {
 			ch <- i
@@ -169,7 +169,7 @@ func TestQueueLargerThanMax(t *testing.T) {
 func TestWait(t *testing.T) {
 	const iterations = 100
 	a := 0
-	m := Bmutex{}
+	m := BMutex{}
 	for i := 0; i < iterations; i++ {
 		m.Queue(func() {
 			a = i
@@ -190,7 +190,7 @@ func TestWait(t *testing.T) {
 
 func TestWaiting(t *testing.T) {
 	const iterations = 100
-	m := Bmutex{}
+	m := BMutex{}
 	waitChan := make(chan struct{})
 	for i := 0; i < iterations; i++ {
 		m.Queue(func() {
@@ -208,7 +208,7 @@ func TestWaiting(t *testing.T) {
 
 func TestBlocked(t *testing.T) {
 	const iterations = 100
-	m := Bmutex{}
+	m := BMutex{}
 	a := 0
 	done := make(chan struct{})
 	go func() {
@@ -237,7 +237,7 @@ func TestBlocked(t *testing.T) {
 func TestQueueThenMany(t *testing.T) {
 	const iterations = 10000
 	ch := make(chan int, iterations*12)
-	m := Bmutex{}
+	m := BMutex{}
 	for i := 0; i < iterations; i++ {
 		m.Queue(func() {
 			ch <- 0
@@ -258,7 +258,7 @@ func TestQueueThenMany(t *testing.T) {
 }
 
 func BenchmarkLock(b *testing.B) {
-	m := Bmutex{}
+	m := BMutex{}
 	a := 0
 	for i := 0; i < b.N; i++ {
 		m.Lock()
@@ -268,7 +268,7 @@ func BenchmarkLock(b *testing.B) {
 }
 
 func BenchmarkLockBlocked(b *testing.B) {
-	m := Bmutex{}
+	m := BMutex{}
 	a := 0
 	go func() {
 		for i := 0; i < b.N; i++ {
@@ -285,7 +285,7 @@ func BenchmarkLockBlocked(b *testing.B) {
 }
 
 func BenchmarkTryLockSucceed(b *testing.B) {
-	m := Bmutex{}
+	m := BMutex{}
 	a := 0
 	for i := 0; i < b.N; i++ {
 		m.TryLock()
@@ -295,7 +295,7 @@ func BenchmarkTryLockSucceed(b *testing.B) {
 }
 
 func BenchmarkTryLockFail(b *testing.B) {
-	m := Bmutex{}
+	m := BMutex{}
 	m.Lock()
 	for i := 0; i < b.N; i++ {
 		m.TryLock()
@@ -303,7 +303,7 @@ func BenchmarkTryLockFail(b *testing.B) {
 }
 
 func BenchmarkProtect(b *testing.B) {
-	m := Bmutex{}
+	m := BMutex{}
 	a := 0
 	for i := 0; i < b.N; i++ {
 		m.Protect(func() {
@@ -313,7 +313,7 @@ func BenchmarkProtect(b *testing.B) {
 }
 
 func BenchmarkQueue(b *testing.B) {
-	m := Bmutex{}
+	m := BMutex{}
 	ch := make(chan struct{}, b.N)
 	go func() {
 		for i := 0; i < b.N; i++ {
@@ -329,7 +329,7 @@ func BenchmarkQueue(b *testing.B) {
 }
 
 func BenchmarkQueueMany(b *testing.B) {
-	m := Bmutex{}
+	m := BMutex{}
 	ch := make(chan struct{}, b.N)
 	go func() {
 		for i := 0; i < b.N; i++ {
