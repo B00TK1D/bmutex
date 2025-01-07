@@ -56,6 +56,7 @@ func (m *BMutex) Protect(f func()) {
 	m.locked = true
 	f()
 	m.op.Lock()
+	m.Mutex.TryLock()
 	m.Mutex.Unlock()
 	m.locked = false
 	m.op.Unlock()
